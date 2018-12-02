@@ -71,6 +71,8 @@ namespace AOC2018 {
             switch (day) {
                 case 1:
                     return new Day1();
+                case 2:
+                    return new Day2();
                 default:
                     return null;
             }
