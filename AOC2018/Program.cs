@@ -38,7 +38,7 @@ namespace AOC2018 {
                     try {
                         puzzle.SolvePart1();
                     }
-                    catch {
+                    catch (Exception ex) {
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine("Oops! I don't think you've solved Part-1 correctly yet!");
                         Console.ForegroundColor = ConsoleColor.Gray;
@@ -51,7 +51,7 @@ namespace AOC2018 {
                     try {
                         puzzle.SolvePart2();
                     }
-                    catch {
+                    catch (Exception ex) {
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine("Oops! I don't think you've solved Part-2 correctly yet!");
                         Console.ForegroundColor = ConsoleColor.Gray;
@@ -73,6 +73,8 @@ namespace AOC2018 {
                     return new Day1();
                 case 2:
                     return new Day2();
+                case 3:
+                    return new Day3();
                 default:
                     return null;
             }
