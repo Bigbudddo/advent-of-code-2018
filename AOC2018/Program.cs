@@ -75,6 +75,8 @@ namespace AOC2018 {
                     return new Day2();
                 case 3:
                     return new Day3();
+                case 4:
+                    return new Day4();
                 default:
                     return null;
             }

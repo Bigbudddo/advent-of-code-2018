@@ -11,7 +11,6 @@ namespace AOC2018 {
 
         private readonly bool _runExample = false;
 
-
         public void SolvePart1() {
             // correct : 110195
             int multipleClaimCount = 0;
