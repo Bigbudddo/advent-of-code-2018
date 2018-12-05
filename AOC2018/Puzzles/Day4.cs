@@ -46,10 +46,6 @@ namespace AOC2018 {
                 }
             }
 
-            if (_runExample) {
-                
-            }
-
             DrawLog(sleepLogs);
 
             // calculate which guard slept the most
@@ -57,15 +53,26 @@ namespace AOC2018 {
             int selectedGuard = -1;
             foreach (var guard in sleepLogs.GroupBy(x => x.GuardId)) {
                 int guardSleepTime = guard.Sum(y => y.TotalTimeSlept);
+                Console.WriteLine(String.Format("Guard #{0} total time spent asleep: {1}", guard.Key, guardSleepTime));
                 if (guardSleepTime > totalTime) {
                     totalTime = guardSleepTime;
                     selectedGuard = guard.Key;
                 }
             }
-            
-            // find the minute 
-            int answer = GetMinuteMostAsleep(sleepLogs.Where(x => x.GuardId == selectedGuard).ToList(), out int guardId);
-            answer = guardId * answer;
+
+            Console.WriteLine();
+            Console.WriteLine(String.Format("Guard #{0} slept the most with a total time of: {1}", selectedGuard, totalTime));
+            Console.WriteLine();
+
+            // find the minute most alseep
+            int minuteMostAsleep = GetMinuteMostAsleep(sleepLogs.Where(x => x.GuardId == selectedGuard).ToList());
+
+            Console.WriteLine(String.Format("Minute most asleep is: {0}", minuteMostAsleep));
+            Console.WriteLine();
+
+            DrawLog(sleepLogs, selectedGuard);
+
+            int answer = selectedGuard * minuteMostAsleep;
 
             Console.WriteLine(String.Format("Part-1 Solution: {0}", answer));
         }
@@ -74,17 +81,39 @@ namespace AOC2018 {
             throw new NotImplementedException();
         }
 
-        private void DrawLog(List<SleepLog> logs) {
+        private void DrawLog(List<SleepLog> logs, int? guardId = null) {
             Console.WriteLine();
-            Console.WriteLine("------------------------------------------------------------------------");
-            Console.WriteLine("Date   ID   Minute                                                        Total");
-            Console.WriteLine("            000000000011111111112222222222333333333344444444445555555555");
-            Console.WriteLine("            012345678901234567890123456789012345678901234567890123456789");
+            Console.WriteLine("------------------------------------------------------------------------------------");
+            Console.WriteLine("Date   ID        Minute                                                        Total");
+            Console.WriteLine("                 000000000011111111112222222222333333333344444444445555555555");
+            Console.WriteLine("                 012345678901234567890123456789012345678901234567890123456789");
 
             // loop around the logs
             logs = logs.OrderBy(x => x.Timestamp).ToList();
             foreach (var log in logs) {
-                Console.Write(String.Format("{0}  #{1}  ", log.Timestamp, log.GuardId));
+                if (guardId.HasValue && guardId.Value != log.GuardId)
+                    continue;
+
+                string spacing = "";
+                switch (log.GuardId.ToString().Length) {
+                    case 2:
+                        spacing = "       ";
+                        break;
+
+                    case 3:
+                        spacing = "      ";
+                        break;
+
+                    case 4:
+                        spacing = "     ";
+                        break;
+
+                    default:
+                        spacing = "  ";
+                        break;
+                }
+
+                Console.Write(String.Format("{0}  #{1}{2}", log.Timestamp, log.GuardId, spacing));
                 foreach (char e in log.Log) {
                     Console.Write(e);
                 }
@@ -92,16 +121,15 @@ namespace AOC2018 {
                 Console.WriteLine();
             }
 
-            Console.WriteLine("------------------------------------------------------------------------");
+            Console.WriteLine("------------------------------------------------------------------------------------");
             Console.WriteLine();
         }
 
-        private int GetMinuteMostAsleep(List<SleepLog> sleepLogs, out int guardId) {
+        private int GetMinuteMostAsleep(List<SleepLog> sleepLogs) {
             int retval = 0;
             int retvalTotal = 0;
             var checkLog = new Dictionary<int, int>();
             // loop each sleep log
-            guardId = -1;
             foreach (var log in sleepLogs) {
                 // get the
                 for (var i = 0; i < log.Log.Length; i++) {
@@ -114,8 +142,6 @@ namespace AOC2018 {
                         if (checkLog[i] > retvalTotal) {
                             retval = i;
                             retvalTotal = checkLog[i];
-
-                            guardId = log.GuardId; // assign the guard-id
                         }
                     }
                 }
