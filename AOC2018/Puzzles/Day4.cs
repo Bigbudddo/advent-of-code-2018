@@ -10,144 +10,102 @@ namespace AOC2018 {
 
     public class Day4 : IPuzzle {
 
+        private enum Action {
+            beginsShift,
+            fallsAsleep,
+            wakesUp
+        };
+
         private readonly bool _runExample = false;
 
         public void SolvePart1() {
-            List<Log> logs = this.ParseInput1();
-            var sleepLogs = new List<SleepLog>();
+            var eventLogs = this.ParseInput1();
+            var parsedEventLogs = this.ParseLog(eventLogs);
 
-            // search logs based on the date
-            foreach (var day in logs.GroupBy(x => x.Timestamp.ToString("MM-dd"))) {
-                // loop the guards within that day
-                foreach (var guard in day.GroupBy(y => y.GuardId)) {
-                    // now loop their actions
-                    DateTime timeOfSleep = DateTime.Now;
-                    var sleepLog = new SleepLog(guard.Key, day.Key);
+            int guardId = this.FindGuardMostAsleep(parsedEventLogs, out int totalTimeSlept);
+            if (guardId < 0)
+                throw new Exception("could not locate guard who slept the most!");
 
-                    foreach (var action in guard) {
-                        switch(action.GuardAction) {
-                            case Log.Action.beginsShift:
-                                break;
+            int minuteMostAsleep = this.FindMinuteMostAsleepForGuardId(guardId, parsedEventLogs, out int value);
 
-                            case Log.Action.fallsAsleep:
-                                timeOfSleep = action.Timestamp;
-                                break;
-
-                            case Log.Action.wakesUp:
-                                sleepLog.AddSleep(timeOfSleep, action.Timestamp);
-                                break;
-
-                            default:
-                                continue;
-                        }
-                    }
-
-                    sleepLogs.Add(sleepLog);
-                }
-            }
-
-            DrawLog(sleepLogs);
-
-            // calculate which guard slept the most
-            int totalTime = 0;
-            int selectedGuard = -1;
-            foreach (var guard in sleepLogs.GroupBy(x => x.GuardId)) {
-                int guardSleepTime = guard.Sum(y => y.TotalTimeSlept);
-                Console.WriteLine(String.Format("Guard #{0} total time spent asleep: {1}", guard.Key, guardSleepTime));
-                if (guardSleepTime > totalTime) {
-                    totalTime = guardSleepTime;
-                    selectedGuard = guard.Key;
-                }
-            }
-
-            Console.WriteLine();
-            Console.WriteLine(String.Format("Guard #{0} slept the most with a total time of: {1}", selectedGuard, totalTime));
-            Console.WriteLine();
-
-            // find the minute most alseep
-            int minuteMostAsleep = GetMinuteMostAsleep(sleepLogs.Where(x => x.GuardId == selectedGuard).ToList());
-
-            Console.WriteLine(String.Format("Minute most asleep is: {0}", minuteMostAsleep));
-            Console.WriteLine();
-
-            DrawLog(sleepLogs, selectedGuard);
-
-            int answer = selectedGuard * minuteMostAsleep;
-
-            Console.WriteLine(String.Format("Part-1 Solution: {0}", answer));
+            Console.WriteLine(String.Format("Part-1 Solution: {0}", (guardId * minuteMostAsleep)));
         }
 
         public void SolvePart2() {
-            throw new NotImplementedException();
+            var eventLogs = this.ParseInput1();
+            var parsedEventLogs = this.ParseLog(eventLogs);
+
+            int mostFrequentMinute = this.FindGuardMostFrequentMinute(parsedEventLogs, out int guardId);
+
+            if (guardId < 0)
+                throw new Exception("could not locate guard id");
+
+            Console.WriteLine(String.Format("Part-2 Solution: {0}", (guardId * mostFrequentMinute)));
         }
 
-        private void DrawLog(List<SleepLog> logs, int? guardId = null) {
-            Console.WriteLine();
-            Console.WriteLine("------------------------------------------------------------------------------------");
-            Console.WriteLine("Date   ID        Minute                                                        Total");
-            Console.WriteLine("                 000000000011111111112222222222333333333344444444445555555555");
-            Console.WriteLine("                 012345678901234567890123456789012345678901234567890123456789");
-
-            // loop around the logs
-            logs = logs.OrderBy(x => x.Timestamp).ToList();
-            foreach (var log in logs) {
-                if (guardId.HasValue && guardId.Value != log.GuardId)
-                    continue;
-
-                string spacing = "";
-                switch (log.GuardId.ToString().Length) {
-                    case 2:
-                        spacing = "       ";
-                        break;
-
-                    case 3:
-                        spacing = "      ";
-                        break;
-
-                    case 4:
-                        spacing = "     ";
-                        break;
-
-                    default:
-                        spacing = "  ";
-                        break;
+        private int FindGuardMostAsleep(Dictionary<int, Dictionary<string, int[]>> parsedEventLogs, out int totalTimeSlept) {
+            int guardId = -1;
+            totalTimeSlept = 0;
+            
+            // loop each guard
+            foreach (var guardData in parsedEventLogs) {
+                // loop each date that the guard was on duty
+                int timeAsleepForDate = 0;
+                foreach (var date in guardData.Value) {
+                    // count the minutes that they were asleep
+                    timeAsleepForDate += date.Value.Where(x => x == 1).Sum();
                 }
 
-                Console.Write(String.Format("{0}  #{1}{2}", log.Timestamp, log.GuardId, spacing));
-                foreach (char e in log.Log) {
-                    Console.Write(e);
-                }
-                Console.Write("  {0}", log.TotalTimeSlept);
-                Console.WriteLine();
-            }
-
-            Console.WriteLine("------------------------------------------------------------------------------------");
-            Console.WriteLine();
-        }
-
-        private int GetMinuteMostAsleep(List<SleepLog> sleepLogs) {
-            int retval = 0;
-            int retvalTotal = 0;
-            var checkLog = new Dictionary<int, int>();
-            // loop each sleep log
-            foreach (var log in sleepLogs) {
-                // get the
-                for (var i = 0; i < log.Log.Length; i++) {
-                    if (!checkLog.ContainsKey(i)) {
-                        checkLog.Add(i, 0);
-                    }
-
-                    if (log.Log[i] == SleepLog._sleepChar) {
-                        checkLog[i]++;
-                        if (checkLog[i] > retvalTotal) {
-                            retval = i;
-                            retvalTotal = checkLog[i];
-                        }
-                    }
+                // compare with our 'highest score'
+                if (timeAsleepForDate > totalTimeSlept) {
+                    // assign the data
+                    totalTimeSlept = timeAsleepForDate;
+                    guardId = guardData.Key;
                 }
             }
 
-            return retval;
+            return guardId;
+        }
+
+        private int FindGuardMostFrequentMinute(Dictionary<int, Dictionary<string, int[]>> parsedEventLogs, out int guardId) {
+            guardId = -1;
+            int guardMostSleptMinute = -1;
+            int guardMostSleptMinuteCount = 0;
+
+            // loop each guard
+            foreach (var guardData in parsedEventLogs) {
+                // find the minute they were most asleep
+                int minuteMostAsleep = this.FindMinuteMostAsleepForGuardId(guardData.Key, parsedEventLogs, out int value);
+                // compare with most asleep minute
+                if (value > guardMostSleptMinuteCount) {
+                    guardMostSleptMinute = minuteMostAsleep;
+                    guardMostSleptMinuteCount = value;
+                    guardId = guardData.Key;
+                }
+            }
+
+            return guardMostSleptMinute;
+        }
+
+        private int FindMinuteMostAsleepForGuardId(int guardId, Dictionary<int, Dictionary<string, int[]>> parsedEventLogs, out int value) {
+            if (!parsedEventLogs.ContainsKey(guardId))
+                throw new Exception("guard does not have any logs");
+
+            var minuteCounts = new int[60];
+            // loop the guard's times
+            foreach (var date in parsedEventLogs[guardId]) {
+                // check each minute in our hour array
+                for (var i = 0; i < date.Value.Length; i++) {
+                    if (date.Value[i] > 0) {
+                        // they are asleep!
+                        minuteCounts[i]++;
+                    }
+                }
+            }
+
+            // return the max value
+            value = minuteCounts.Max();
+            return minuteCounts.ToList().IndexOf(value);
         }
 
         private List<Log> ParseInput1() {
@@ -177,48 +135,130 @@ namespace AOC2018 {
                 records = File.ReadAllLines("Files/day-4-1.txt");
             }
 
+            // parse each record into a readable log object
             var retval = new List<Log>();
             for (var i = 0; i < records.Length; i++) {
-                // get the previous guard id
-                Log previousLog = (retval.Count > 0) ? retval[i - 1] : null;
-                int previousGuardId = (previousLog != null) ? previousLog.GuardId : -1;
-
-                // add & parse the record into a log
-                retval.Add(new Log(records[i], previousGuardId));
+                retval.Add(new Log(records[i]));
             }
-            
-            return retval.OrderBy(x => x.Timestamp).ToList();
+
+            // sort that object into the datetime
+            retval = retval.OrderBy(x => x.DateTime).ToList();
+
+            // now we need to figure out the guard id's for each action
+            // note; I think this is where I fucked up,  I assigned the GuardId before ordering
+            int currentGuardId = -1;
+            foreach (var log in retval) {
+                if (log.GuardId > 0) {
+                    currentGuardId = log.GuardId;
+                }
+                else {
+                    if (currentGuardId <= 0)
+                        throw new Exception("unknown guard id? what happened?");
+
+                    log.UpdateGuardId(currentGuardId);
+                }
+            }
+
+            // return our result
+            return retval;
+        }
+        
+        private Dictionary<int, Dictionary<string, int[]>> ParseLog(List<Log> logs) {
+            var retval = new Dictionary<int, Dictionary<string, int[]>>();
+
+            // loop for each guard
+            foreach (var guard in logs.GroupBy(x => x.GuardId)) {
+                // loop for each day/month combo
+                var dayLogs = new Dictionary<string, int[]>();
+                foreach (var day in guard.GroupBy(y => y.Datestamp)) {
+                    var hourMinuteLog = new int[60]; // count each minute within the midnight hour
+                    // loop the actions for that day
+                    int minute = -1;
+                    foreach (var action in day) {
+                        switch(action.GuardAction) {
+                            case Action.beginsShift:
+                                break;
+
+                            case Action.fallsAsleep:
+                                minute = action.Minute; // the minute he/she fell asleep
+                                break;
+
+                            case Action.wakesUp:
+                                if (minute < 0)
+                                    throw new Exception("unknown sequence of events! wakes up before he falls asleep?");
+                                // assign the sleep time
+                                for (var i = minute; i < action.Minute; i++) {
+                                    hourMinuteLog[i] = 1;
+                                }
+                                break;
+                        }
+                    }
+                    
+                    dayLogs.Add(day.Key, hourMinuteLog);
+                }
+
+                retval.Add(guard.Key, dayLogs);
+            }
+
+            return retval;
         }
 
         private class Log {
 
-            public enum Action {
-                beginsShift,
-                fallsAsleep,
-                wakesUp
-            };
+            public int GuardId { get; private set; }
 
-            public int GuardId { get; set; }
+            public DateTime DateTime { get; private set; }
 
-            public DateTime Timestamp { get; set; }
+            public Action GuardAction { get; private set; }
 
-            public Action GuardAction { get; set; }
+            public int Year {
+                get { return DateTime.Year; }
+            }
 
-            private void ParseRecord(string record, int previousGuardId) {
+            public int Month {
+                get { return DateTime.Month; }
+            }
+
+            public int Day {
+                get { return DateTime.Day; }
+            }
+
+            public int Hour {
+                get { return DateTime.Hour; }
+            }
+
+            public int Minute {
+                get { return DateTime.Minute; }
+            }
+
+            public int Second {
+                get { return DateTime.Second; }
+            }
+
+            public string Datestamp {
+                get {
+                    return string.Format("{0}-{1}", Month, Day);
+                }
+            }
+
+            public string Timestamp {
+                get {
+                    return string.Format("{0}:{1}", Hour, Minute);
+                }
+            }
+
+            public void UpdateGuardId(int guardId) {
+                GuardId = guardId;
+            }
+
+            private void ParseRecord(string record) {
                 // get the timestamp first
                 Match match = Regex.Match(record, @"\[(.*?)\]");
                 if (!match.Success)
-                    throw new Exception("could not pull the date-time value with regext!");
+                    throw new Exception("could not pull the date-time value with regex!");
 
-                // set the timestamp
-                Timestamp = DateTime.Parse(match.Value.Replace("[", "").Replace("]", ""));
-
-                // check for a time just before midnight, and assign it to the next day!
-                if (Timestamp.Hour == 23 && (Timestamp.Minute >= 55 && Timestamp.Minute < 60)) {
-                    Timestamp.AddDays(1);
-                    Timestamp = new DateTime(Timestamp.Year, Timestamp.Month, Timestamp.Day, 0, 0, 0);
-                    //Timestamp = new DateTime(Timestamp.Year, Timestamp.Month, (Timestamp.Day + 1), 0, 0, 0);
-                }
+                // set the date-time
+                DateTime = DateTime.Parse(match.Value.Replace("[", "").Replace("]", "").Trim());
 
                 // we want to check for the guard details if they exists!
                 // note; we can tell in this puzzle that there is a '#' character within the record
@@ -229,7 +269,7 @@ namespace AOC2018 {
                     record = String.Join(" ", aRecord.Skip(1).ToArray()).Trim(); // re-join minus the guard ID
                 }
                 else {
-                    GuardId = previousGuardId;
+                    GuardId = -1;
                 }
 
                 // now we want the action
@@ -251,52 +291,8 @@ namespace AOC2018 {
                 }
             }
 
-            public Log(string record, int previousGuardId) {
-                ParseRecord(record, previousGuardId);
-            }
-        }
-
-        private class SleepLog {
-
-            public static readonly char _awakeChar = '.';
-            public static readonly char _sleepChar = '#';
-
-            public int GuardId { get; set; }
-
-            public string Timestamp { get; set; }
-
-            public char[] Log { get; set; }
-
-            public int TotalTimeSlept {
-                get {
-                    int count = 0;
-
-                    foreach (char x in Log) {
-                        if (x == _sleepChar)
-                            count++;
-                    }
-
-                    return count;
-                }
-            }
-
-            public void AddSleep(DateTime start, DateTime end) {
-                TimeSpan minutesOfSleep = end - start;
-                //Console.WriteLine("Sleep Time: " + minutesOfSleep.Minutes);
-
-                for (var i = start.Minute; i < end.Minute; i++) {
-                    Log[i] = _sleepChar;
-                }
-            }
-
-            public SleepLog(int guardId, string timestamp) {
-                GuardId = guardId;
-                Timestamp = timestamp;
-                // sort-out our log
-                Log = new char[60];
-                for (var i = 0; i < Log.Length; i++) {
-                    Log[i] = '.';
-                }
+            public Log(string record) {
+                ParseRecord(record);
             }
         }
     }

@@ -49,6 +49,8 @@
     <Compile Include="Puzzles\Day2.cs" />
     <Compile Include="Puzzles\Day3.cs" />
     <Compile Include="Puzzles\Day4.cs" />
+    <Compile Include="Puzzles\Day5.cs" />
+    <Compile Include="Puzzles\Day6.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

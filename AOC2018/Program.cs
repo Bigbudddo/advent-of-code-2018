@@ -8,6 +8,8 @@ namespace AOC2018 {
 
     class Program {
 
+        static readonly int? _overrideDay = 5;
+
         static void Main(string[] args) {
             DateTime today = DateTime.Now;
             if (today.Month != 12) {
@@ -15,10 +17,18 @@ namespace AOC2018 {
                 Console.WriteLine();
             }
             else {
-                Console.WriteLine(string.Format("Looks like today is the {0}{1}.", today.Day, ProgramHelpers.GetDateEnd(today.Day)));
+                int day = 0;
+                if (_overrideDay.HasValue) {
+                    Console.WriteLine(string.Format("Overriding the Day! You are running the puzzle for the {0}{1}.", _overrideDay.Value, ProgramHelpers.GetDateEnd(_overrideDay.Value)));
+                    day = _overrideDay.Value;
+                }
+                else {
+                    Console.WriteLine(string.Format("Looks like today is the {0}{1}.", today.Day, ProgramHelpers.GetDateEnd(today.Day)));
+                    day = today.Day;
+                }
+                
                 Console.Write("Checking to see if we have this puzzle implemented yet... ");
-
-                IPuzzle puzzle = GetPuzzle(today.Day);
+                IPuzzle puzzle = GetPuzzle(day);
                 if (puzzle == null) {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("NOT FOUND!");
@@ -78,7 +88,9 @@ namespace AOC2018 {
                 case 4:
                     return new Day4();
                 case 5:
-                    return new Day4();
+                    return new Day5();
+                case 6:
+                    return new Day6();
                 default:
                     return null;
             }
