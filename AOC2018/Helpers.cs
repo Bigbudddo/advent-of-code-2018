@@ -6,6 +6,13 @@ using System.Threading.Tasks;
 
 namespace AOC2018 {
 
+    public static class Heuristics {
+
+        public static int ManhattanDistance(int x1, int x2, int y1, int y2) {
+            return Math.Abs(x1 - x2) + Math.Abs(y1 - y2);
+        }
+    }
+
     public static class Levenshtein {
 
         public static int Compute(string s, string t) {
