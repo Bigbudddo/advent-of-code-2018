@@ -51,6 +51,7 @@
     <Compile Include="Puzzles\Day4.cs" />
     <Compile Include="Puzzles\Day5.cs" />
     <Compile Include="Puzzles\Day6.cs" />
+    <Compile Include="Puzzles\Day7.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -72,6 +73,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Files\day-6-1.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Files\day-7-1.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
