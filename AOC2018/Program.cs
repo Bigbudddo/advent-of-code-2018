@@ -8,7 +8,7 @@ namespace AOC2018 {
 
     class Program {
 
-        static readonly int? _overrideDay = null;
+        static readonly int? _overrideDay = 6;
 
         static void Main(string[] args) {
             DateTime today = DateTime.Now;

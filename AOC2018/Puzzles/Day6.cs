@@ -9,8 +9,8 @@ namespace AOC2018 {
 
     public class Day6 : IPuzzle {
 
-        private readonly bool _runExample = true;
-        private readonly bool _renderBoard = true;
+        private readonly bool _runExample = false;
+        private readonly bool _renderBoard = false;
 
         public void SolvePart1() {
             // get our inputs
@@ -21,58 +21,18 @@ namespace AOC2018 {
                 DrawBoard(board);
 
             // get all point/plot claims and tally them all up to get totals for each coord
-            ClaimBoard(ref board, points.ToArray());
+            Dictionary<char, int> finiteClaims = ClaimBoard(ref board, ref points);
 
             if (_renderBoard)
                 DrawBoard(board);
 
             // get the max one
-            //int max = totalPointClaims.Values.Max();
-            int max = -1;
+            int max = finiteClaims.Values.Max();
             Console.WriteLine(String.Format("Part-1 Solution: {0}", max));
         }
 
         public void SolvePart2() {
             throw new NotImplementedException();
-        }
-
-        private bool IsFinite(char[,] board, int x, int y) {
-            if (x < 1 || x >= board.GetLength(0))
-                return false;
-            if (y < 1 || y >= board.GetLength(1))
-                return false;
-
-            // check north
-
-            // check south
-
-            // check west
-
-            // check east
-
-            return true;
-        }
-
-        private void ClaimBoard(ref char[,] board, params ChronalCoordinate[] points) {
-            int rowLength = board.GetLength(0);
-            int colLength = board.GetLength(1);
-
-            for (int i = 0; i < rowLength; i++) {
-                for (int j = 0; j < colLength; j++) {
-                    var claims = new Dictionary<char, int>();
-                    foreach (var coord in points) {
-                        int distance = Heuristics.ManhattanDistance(coord.X, j, coord.Y, i);
-                        claims.Add(coord.Id, distance);
-                    }
-
-                    int closestValue = claims.Values.Min();
-                    if (claims.Values.Where(x => x == closestValue).Count() <= 1) {
-                        // we have exactly 1 closest claim!
-                        char id = claims.Where(x => x.Value == closestValue).FirstOrDefault().Key;
-                        board[i, j] = id;
-                    }
-                }
-            }
         }
 
         private void DrawBoard(char[,] board) {
@@ -95,7 +55,7 @@ namespace AOC2018 {
             Console.WriteLine("----------------------------------");
             Console.WriteLine();
         }
-
+        
         private char[,] PlotBoard(int boardSize, params ChronalCoordinate[] points) {
             var board = new char[boardSize + 1, boardSize + 1];
 
@@ -156,29 +116,63 @@ namespace AOC2018 {
             // return the result
             return retval;
         }
-        
-        private Dictionary<char, int> GetFiniteClaims(char[,] board) {
-            var retval = new Dictionary<char, int>();
 
+        private Dictionary<char, int> ClaimBoard(ref char[,] board, ref List<ChronalCoordinate> points) {
             int rowLength = board.GetLength(0);
             int colLength = board.GetLength(1);
 
+            var claimCoverage = new Dictionary<char, int>();
             for (int i = 0; i < rowLength; i++) {
                 for (int j = 0; j < colLength; j++) {
-                    // check if the current character is finite
-                    if (IsFinite(board, i, j)) {
-                        char id = board[i, j];
-                        if (!retval.ContainsKey(id)) {
-                            retval.Add(id, 1);
+                    var claims = new Dictionary<char, int>();
+                    foreach (var coord in points) {
+                        int distance = Heuristics.ManhattanDistance(coord.X, j, coord.Y, i);
+                        claims.Add(coord.Id, distance);
+                    }
+
+                    int closestValue = claims.Values.Min();
+                    if (claims.Values.Where(x => x == closestValue).Count() <= 1) {
+                        // we have exactly 1 closest claim!
+                        char id = claims.Where(x => x.Value == closestValue).FirstOrDefault().Key;
+                        board[i, j] = id;
+
+                        // add to our claim coverage
+                        if (!claimCoverage.ContainsKey(id)) {
+                            claimCoverage.Add(id, 1);
                         }
                         else {
-                            retval[id]++;
+                            claimCoverage[id]++;
                         }
                     }
                 }
             }
 
-            return retval;
+            var finiteClaims = new Dictionary<char, int>();
+            foreach (var point in points.OrderBy(x => x.Id)) {
+                // check if we are around the boundaries of our board
+                if (board.GetRow(0).Contains(point.Id) ||
+                    board.GetRow(rowLength - 1).Contains(point.Id) ||
+                    board.GetCol(0).Contains(point.Id) ||
+                    board.GetCol(colLength - 1).Contains(point.Id)) {
+                    // set finite to false, it's impossible for this point to be finite because we assume outside the boundaries of our board is infinity!
+                    point.IsFinite = false;
+                    continue;
+                }
+
+                // check to see if we have any claims at all?
+                if (!claimCoverage.ContainsKey(point.Id)) {
+                    point.IsFinite = false;
+                    continue;
+                }
+
+                // now we need to check the ones we know could be finite. 
+                // in the example only D & E should get to this point
+
+                point.IsFinite = true; // test, this will be changed?
+                finiteClaims.Add(point.Id, claimCoverage[point.Id]);
+            }
+
+            return finiteClaims;
         }
 
         private class ChronalCoordinate {
@@ -188,6 +182,8 @@ namespace AOC2018 {
             public int X { get; private set; }
 
             public int Y { get; private set; }
+
+            public bool IsFinite { get; set; }
 
             public ChronalCoordinate(char id, int x, int y) {
                 Id = id;
