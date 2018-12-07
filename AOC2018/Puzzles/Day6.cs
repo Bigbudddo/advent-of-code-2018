@@ -32,7 +32,45 @@ namespace AOC2018 {
         }
 
         public void SolvePart2() {
-            throw new NotImplementedException();
+            // get our inputs
+            List<ChronalCoordinate> points = this.ParseInput1(out int maximumPointSize);
+            char[,] board = this.PlotBoard(maximumPointSize, points.ToArray());
+
+            if (_renderBoard)
+                DrawBoard(board);
+
+            int regionSize = ClaimRegion(ref board, ref points);
+
+            if (_renderBoard)
+                DrawBoard(board);
+
+            Console.WriteLine(String.Format("Part-2 Solution: {0}", regionSize));
+        }
+
+        private int ClaimRegion(ref char[,] board, ref List<ChronalCoordinate> points) {
+            int rowLength = board.GetLength(0);
+            int colLength = board.GetLength(1);
+            int minimumDistance = (_runExample) ? 32 : 10000;
+
+            int regionSize = 0;
+            for (int i = 0; i < rowLength; i++) {
+                for (int j = 0; j < colLength; j++) {
+                    var distanceToPoints = new List<int>();
+                    // loop the points
+                    foreach (var coord in points) {
+                        int distance = Heuristics.ManhattanDistance(j, coord.X, i, coord.Y);
+                        distanceToPoints.Add(distance);
+                    }
+
+                    // check if all the distances are under the minimum
+                    if (distanceToPoints.Sum() < minimumDistance) {
+                        regionSize++;
+                        board[i, j] = (board[i, j] == '.') ? '#' : board[i, j];
+                    }
+                }
+            }
+
+            return regionSize;
         }
 
         private void DrawBoard(char[,] board) {
