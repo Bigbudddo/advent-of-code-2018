@@ -36,7 +36,56 @@ namespace AOC2018 {
         }
 
         public void SolvePart2() {
-            throw new NotImplementedException();
+            // get the inputs
+            Dictionary<char, List<char>> input = this.ParseInput1();
+            int baseWorkTime = (_runExample) ? 0 : 60;
+            int numberOfWorkers = (_runExample) ? 2 : 5;
+
+            int timeTaken = 0;
+            var jobsQueue = new List<Job>();
+            int stepsToComplete = input.Keys.Count;
+            var stepsCompleted = new List<char>();
+            
+            do {
+                // loop each worker and give them a job to do!
+                for (var i = 0; i < numberOfWorkers; i++) {
+                    // find the next step
+                    List<char> currentJobIds = jobsQueue.Select(x => x.Id).ToList();
+                    char id = input.OrderBy(x => x.Key).Where(y => y.Value.Count == 0 && !currentJobIds.Contains(y.Key)).Select(z => z.Key).FirstOrDefault();
+                    // check to see we have an actual job for that worker to do?
+                    if (id != '\0') {
+                        jobsQueue.Add(new Job(id, (baseWorkTime + this.GetStepWorkTime(id))));
+                    }
+                }
+
+                // deduct a measure of time from the current jobs in the queue
+                foreach (var job in jobsQueue) {
+                    job.TimeRemaining--;
+
+                    if (job.TimeRemaining <= 0) {
+                        // job is finished
+                        stepsCompleted.Add(job.Id);
+                        // remove this step from each input
+                        foreach (var i in input) {
+                            i.Value.Remove(job.Id);
+                        }
+                        // remove from input
+                        input.Remove(job.Id);
+                    }
+                }
+
+                // remove all finished/dead jobs
+                jobsQueue.RemoveAll(x => stepsCompleted.Contains(x.Id));
+                // increase the time
+                timeTaken++;
+            } while (stepsCompleted.Count() < stepsToComplete);
+
+            string answer = new string(stepsCompleted.ToArray());
+            Console.WriteLine(String.Format("Part-2 Solution: {0}. Time Taken: {1}", answer, timeTaken));
+        }
+
+        private int GetStepWorkTime(char step) {
+            return Math.Abs(((int)step) - 64);
         }
 
         private Dictionary<char, List<char>> ParseInput1() {
@@ -75,6 +124,18 @@ namespace AOC2018 {
             }
             
             return retval;
+        }
+
+        private class Job {
+
+            public char Id { get; set; }
+
+            public int TimeRemaining { get; set; }
+
+            public Job(char id, int timeRemaining) {
+                Id = id;
+                TimeRemaining = timeRemaining;
+            }
         }
     }
 }
